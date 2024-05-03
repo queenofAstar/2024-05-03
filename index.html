@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>오목</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+
+        #board {
+            width: 400px;
+            height: 400px;
+            border: 2px solid #333;
+            display: grid;
+            grid-template-columns: repeat(15, 1fr);
+            grid-template-rows: repeat(15, 1fr);
+        }
+
+        .cell {
+            border: 1px solid #aaa;
+            background-color: #f0f0f0;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .black-stone {
+            width: 80%;
+            height: 80%;
+            border-radius: 50%;
+            background-color: black;
+            margin: auto;
+        }
+
+        .white-stone {
+            width: 80%;
+            height: 80%;
+            border-radius: 50%;
+            background-color: white;
+            margin: auto;
+        }
+
+        .win-line {
+            position: absolute;
+            background-color: yellow;
+            z-index: 1;
+        }
+    </style>
+</head>
+<body>
+    <div id="board"></div>
+    
+    <script>
+        const board = document.getElementById('board');
+        const cells = [];
+        let currentPlayer = 'black';
+        let gameEnded = false;
+
+        // Create cells
+        for (let i = 0; i < 15; i++) {
+            cells[i] = [];
+            for (let j = 0; j < 15; j++) {
+                const cell = document.createElement('div');
+                cell.classList.add('cell');
+                cell.dataset.row = i;
+                cell.dataset.column = j;
+                cell.addEventListener('click', () => placeStone(i, j));
+                board.appendChild(cell);
+                cells[i][j] = cell;
+            }
+        }
+
+        function placeStone(row, column) {
+            if (!cells[row][column].classList.contains('black-stone') && !cells[row][column].classList.contains('white-stone') && !gameEnded) {
+                const stone = document.createElement('div');
+                stone.classList.add(currentPlayer === 'black' ? 'black-stone' : 'white-stone');
+                cells[row][column].appendChild(stone);
+                if (checkWin(row, column)) {
+                    gameEnded = true;
+                    alert(currentPlayer.toUpperCase() + ' Wins!');
+                    resetGame();
+                } else {
+                    currentPlayer = currentPlayer === 'black' ? 'white' : 'black';
+                    if (currentPlayer === 'white') {
+                        setTimeout(() => {
+                            aiPlaceStone();
+                        }, 500); // AI가 돌을 놓는 시간 지연 (0.5초)
+                    }
+                }
+            }
+        }
+
+        function checkWin(row, column) {
+            const directions = [[0, 1], [1, 0], [1, 1], [1, -1]]; // 가로, 세로, 대각선 방향
+            const stoneColor = currentPlayer === 'black' ? 'black-stone' : 'white-stone';
+            for (const [dx, dy] of directions) {
+                let count = 1;
+                let newRow = row + dx;
+                let newColumn = column + dy;
+                while (newRow >= 0 && newRow < 15 && newColumn >= 0 && newColumn < 15 && cells[newRow][newColumn].classList.contains(stoneColor)) {
+                    count++;
+                    newRow += dx;
+                    newColumn += dy;
+                }
+                newRow = row - dx;
+                newColumn = column - dy;
+                while (newRow >= 0 && newRow < 15 && newColumn >= 0 && newColumn < 15 && cells[newRow][newColumn].classList.contains(stoneColor)) {
+                    count++;
+                    newRow -= dx;
+                    newColumn -= dy;
+                }
+                if (count >= 5) {
+                    drawWinLine(row, column, dx, dy, count);
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function drawWinLine(row, column, dx, dy, count) {
+            const winLine = document.createElement('div');
+            winLine.classList.add('win-line');
+            const cellSize = cells[0][0].offsetWidth;
+            winLine.style.width = (cellSize * count) + 'px';
+            winLine.style.height = (cellSize * count) + 'px';
+            winLine.style.top = (row * cellSize + cellSize / 2 - winLine.offsetHeight / 2) + 'px';
+            winLine.style.left = (column * cellSize + cellSize / 2 - winLine.offsetWidth / 2) + 'px';
+            if (dx === 0) {
+                winLine.style.transform = 'rotate(90deg)';
+            } else if (dy === 0) {
+                winLine.style.transform = 'rotate(0deg)';
+            } else if (dx === dy) {
+                winLine.style.transform = 'rotate(45deg)';
+            } else if (dx === -dy) {
+                winLine.style.transform = 'rotate(-45deg)';
+            }
+            board.appendChild(winLine);
+        }
+
+        function resetGame() {
+            gameEnded = false;
+            currentPlayer = 'black';
+            for (let i = 0; i < 15; i++) {
+                for (let j = 0; j < 15; j++) {
+                    cells[i][j].innerHTML = '';
+                }
+            }
+            const winLine = document.querySelector('.win-line');
+            if (winLine) {
+                winLine.remove();
+            }
+        }
+
+        function aiPlaceStone() {
+            let emptyCells = [];
+            for (let i = 0; i < 15; i++) {
+                for (let j = 0; j < 15; j++) {
+                    if (!cells[i][j].classList.contains('black-stone') && !cells[i][j].classList.contains('white-stone')) {
+                        emptyCells.push([i, j]);
+                    }
+                }
+            }
+            const randomIndex = Math.floor(Math.random() * emptyCells.length);
+            const [row, column] = emptyCells[randomIndex];
+            placeStone(row, column);
+        }
+    </script>
+</body>
+</html>

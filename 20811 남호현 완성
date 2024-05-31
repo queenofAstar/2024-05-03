@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>오목 게임</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        #board {
+            display: grid;
+            grid-template-columns: repeat(15, 40px);
+            grid-template-rows: repeat(15, 40px);
+            gap: 2px;
+        }
+        .cell {
+            width: 40px;
+            height: 40px;
+            background-color: #f0d9b5;
+            border: 1px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        .cell.black {
+            background-color: black;
+        }
+        .cell.white {
+            background-color: white;
+        }
+        #restartButton {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            display: none;
+        }
+        #result {
+            font-size: 48px;
+            color: red;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="result"></div>
+    <div id="board"></div>
+    <button id="restartButton">재시작</button>
+
+    <script>
+        const boardSize = 15;
+        let board = [];
+        let currentPlayer = 'black'; // 'black' or 'white'
+        const boardElement = document.getElementById('board');
+        const resultElement = document.getElementById('result');
+        const restartButton = document.getElementById('restartButton');
+
+        // Initialize board
+        function initializeBoard() {
+            board = [];
+            boardElement.innerHTML = '';
+            for (let i = 0; i < boardSize; i++) {
+                board[i] = [];
+                for (let j = 0; j < boardSize; j++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.row = i;
+                    cell.dataset.col = j;
+                    cell.addEventListener('click', handleCellClick);
+                    boardElement.appendChild(cell);
+                    board[i][j] = '';
+                }
+            }
+        }
+
+        // Handle cell click
+        function handleCellClick(event) {
+            const row = event.target.dataset.row;
+            const col = event.target.dataset.col;
+
+            if (board[row][col] === '') {
+                board[row][col] = currentPlayer;
+                event.target.classList.add(currentPlayer);
+                if (checkWin(row, col, currentPlayer)) {
+                    endGame(currentPlayer);
+                } else {
+                    currentPlayer = currentPlayer === 'black' ? 'white' : 'black';
+                    if (currentPlayer === 'white') {
+                        setTimeout(computerMove, 500); // Computer makes a move after a delay
+                    }
+                }
+            }
+        }
+
+        // Check for win
+        function checkWin(row, col, player) {
+            return (
+                checkDirection(row, col, player, 1, 0) ||
+                checkDirection(row, col, player, 0, 1) ||
+                checkDirection(row, col, player, 1, 1) ||
+                checkDirection(row, col, player, 1, -1)
+            );
+        }
+
+        function checkDirection(row, col, player, rowDir, colDir) {
+            let count = 0;
+            for (let i = -4; i <= 4; i++) {
+                const r = parseInt(row) + i * rowDir;
+                const c = parseInt(col) + i * colDir;
+                if (r >= 0 && r < boardSize && c >= 0 && c < boardSize && board[r][c] === player) {
+                    count++;
+                    if (count === 5) {
+                        return true;
+                    }
+                } else {
+                    count = 0;
+                }
+            }
+            return false;
+        }
+
+        // End game
+        function endGame(winner) {
+            resultElement.textContent = `${winner === 'black' ? '흑돌' : '백돌'} 승!`;
+            resultElement.style.display = 'block';
+            restartButton.style.display = 'block';
+            boardElement.style.pointerEvents = 'none';
+        }
+
+        // Restart game
+        function restartGame() {
+            initializeBoard();
+            currentPlayer = 'black';
+            resultElement.style.display = 'none';
+            restartButton.style.display = 'none';
+            boardElement.style.pointerEvents = 'auto';
+        }
+
+        // Computer move (random)
+        function computerMove() {
+            let availableMoves = [];
+            for (let i = 0; i < boardSize; i++) {
+                for (let j = 0; j < boardSize; j++) {
+                    if (board[i][j] === '') {
+                        availableMoves.push({ row: i, col: j });
+                    }
+                }
+            }
+            const move = availableMoves[Math.floor(Math.random() * availableMoves.length)];
+            board[move.row][move.col] = 'white';
+            const cell = document.querySelector(`.cell[data-row='${move.row}'][data-col='${move.col}']`);
+            cell.classList.add('white');
+            if (checkWin(move.row, move.col, 'white')) {
+                endGame('white');
+            } else {
+                currentPlayer = 'black';
+            }
+        }
+
+        restartButton.addEventListener('click', restartGame);
+
+        // Start game
+        initializeBoard();
+    </script>
+</body>
+</html>
